@@ -1,12 +1,63 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
-import './index.css';
-import App from './App';
-import * as serviceWorker from './serviceWorker';
+import React from "react";
+import ReactDOM from "react-dom";
+import { BrowserRouter as Router, Switch, Route, Link } from "react-router-dom";
+import * as Sentry from "@sentry/browser";
 
-ReactDOM.render(<App />, document.getElementById('root'));
+import { unstable_trace as trace } from "scheduler/tracing";
 
-// If you want your app to work offline and load faster, you can change
-// unregister() to register() below. Note this comes with some pitfalls.
-// Learn more about service workers: https://bit.ly/CRA-PWA
-serviceWorker.unregister();
+import NoProfilerComponent from "./NoProfilerComponent";
+import SingleInteractionComponent from "./SingleInteractionComponent";
+import MultipleInteractionsComponent from "./MultipleInteractionsComponent";
+
+Sentry.init({
+  debug: true,
+  dsn: "https://14830a963b1e4c20ad90e47289c1fe98@sentry.io/1419836",
+  beforeSend(event) {
+    console.log(event);
+    // return event;
+    return null;
+  }
+});
+
+class App extends React.Component {
+  render() {
+    return (
+      <div className="App">
+        <Router>
+          <div>
+            <nav>
+              <ul>
+                <li>
+                  <Link to="/">NoProfilerComponent</Link>
+                </li>
+                <li>
+                  <Link to="/single">SingleInteraction</Link>
+                </li>
+                <li>
+                  <Link to="/multiple">MultipleInteractions</Link>
+                </li>
+              </ul>
+            </nav>
+
+            <Switch>
+              <Route path="/single">
+                <SingleInteractionComponent />
+              </Route>
+              <Route path="/multiple">
+                <MultipleInteractionsComponent />
+              </Route>
+              <Route path="/">
+                <NoProfilerComponent />
+              </Route>
+            </Switch>
+          </div>
+        </Router>
+      </div>
+    );
+  }
+}
+
+// NOTE: No idea why it shows as an interaction during initial "update" state of child components - it shouldn't
+trace("AppRender", +new Date(), () =>
+  ReactDOM.render(<App />, document.getElementById("root"))
+);
